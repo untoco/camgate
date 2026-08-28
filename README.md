@@ -1,51 +1,52 @@
 # camgate
 
-**camgate** remotely switches external USB-C power for a GoPro from a phone.
+**camgate** удалённо включает и отключает внешнее USB-C-питание GoPro со
+смартфона.
 
-The first version is a compact in-car controller: the phone sends a command to
-an M5Stack Atom, and the Atom enables or cuts power to the dedicated GoPro
-USB-C adapter. It does not control recording or replace the GoPro connection
-used by the Onboard app.
+Первая версия — компактный автомобильный контроллер: смартфон передаёт команду
+на M5Stack Atom, а тот подаёт или отключает питание отдельного USB-C-адаптера
+GoPro. Проект не управляет записью и не заменяет соединение GoPro, используемое
+приложением Onboard.
 
-## Component base
+## Компонентная база
 
-- **M5Stack Atom Lite** — controller with Bluetooth/Wi-Fi and one GPIO for the
-  relay. It is sufficient for the first version; no display or extra memory is
-  required.
-- **M5Stack Mini 3A Relay Unit (U023)** — switches the USB-C adapter's input
-  circuit. Its stated DC rating is 3 A at up to 30 V; the expected GoPro
-  adapter input current is well below this, typically below 1 A.
-- **Automotive 12 V to USB-C adapter** — dedicated GoPro power supply. It must
-  be suitable for automotive voltage transients, not merely a generic USB-C
-  mains charger.
-- **12 V to 5 V converter for the Atom** — a separate, non-switched branch so
-  the Atom remains powered when GoPro power is off.
-- **1 A fuse** — installed close to the 12 V source for the dedicated GoPro
-  power branch.
-- Enclosure, terminal blocks, strain relief and automotive-grade wiring.
+- **M5Stack Atom Lite** — контроллер с Bluetooth/Wi-Fi и одним GPIO для реле.
+  Для первой версии достаточно: экран и дополнительная память не нужны.
+- **M5Stack Mini 3A Relay Unit (U023)** — коммутирует входную цепь USB-C
+  адаптера. Заявленный предел для постоянного тока — 3 А при напряжении до
+  30 В; ожидаемый входной ток адаптера GoPro существенно ниже, обычно до 1 А.
+- **Автомобильный адаптер 12 В → USB-C** — выделенный источник питания GoPro.
+  Он должен быть рассчитан на выбросы напряжения в бортовой сети, а не быть
+  обычным сетевым USB-C-зарядником.
+- **Преобразователь 12 В → 5 В для Atom** — отдельная некоммутируемая ветвь,
+  чтобы Atom оставался включённым при отключённом питании GoPro.
+- **Предохранитель 1 А** — устанавливается рядом с источником 12 В в
+  выделенной ветви питания GoPro.
+- Корпус, клеммы, разгрузка кабелей и автомобильный провод.
 
-The M5Stack SSR Unit (BT136S) is deliberately excluded: it is an AC-only,
-zero-crossing thyristor relay and cannot switch the car's 12 V DC supply.
+M5Stack SSR Unit (BT136S) намеренно исключён: это симисторное реле с
+переключением в нуле, только для переменного тока; бортовые 12 В постоянного
+тока оно не коммутирует.
 
-## Electrical concept
+## Электрическая схема
 
-Only the positive conductor is switched:
+Коммутируется только положительный проводник:
 
 ```text
-12 V source -> 1 A fuse -> relay COM -> relay NO -> USB-C adapter +12 V
-ground ------------------------------------------------> USB-C adapter ground
+источник 12 В → предохранитель 1 А → COM реле → NO реле → +12 В адаптера USB-C
+ground ----------------------------------------------------→ ground адаптера USB-C
 ```
 
-The Atom receives power from its own protected 12 V -> 5 V branch. Prefer an
-ACC-switched source for the Atom, so the controller does not drain the vehicle
-battery while parked.
+Atom получает питание от собственной защищённой ветви 12 В → 5 В. Предпочтителен
+источник, включаемый от ACC: так контроллер не будет разряжать аккумулятор на
+стоянке.
 
-The vehicle's accessory-socket fuse rating is not the relay load: the relay
-carries only the actual current consumed by the dedicated USB-C adapter. The
-final wiring, fuse location, voltage-transient tolerance, enclosure and
-operation under vibration remain to be verified on the car.
+Номинал предохранителя прикуривателя не является нагрузкой реле: через него
+идёт только фактический ток выделенного USB-C-адаптера. Финальные проводка,
+положение предохранителя, устойчивость к выбросам напряжения, корпус и работа
+при вибрации требуют проверки на автомобиле.
 
-## Status
+## Статус
 
-Concept and component selection only. No wiring, firmware, vehicle installation
-or endurance validation has been completed yet.
+Пока определены только концепция и компоненты. Проводка, прошивка, установка на
+автомобиль и ресурсная проверка ещё не выполнены.
