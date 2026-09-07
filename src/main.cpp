@@ -18,14 +18,14 @@ constexpr uint8_t kButtonPin = 39;
 constexpr uint8_t kLedPin = 27;
 constexpr uint32_t kDebounceMs = 40;
 
-constexpr uint8_t kCommandOff = 0x00;
-constexpr uint8_t kCommandOn = 0x01;
-constexpr uint8_t kCommandToggle = 0x02;
+constexpr uint8_t kCommandPowerOn = 0x00;
+constexpr uint8_t kCommandPowerOff = 0x01;
+constexpr uint8_t kCommandTogglePower = 0x02;
 
 CRGB statusLed[1];
 BLECharacteristic* stateCharacteristic = nullptr;
 
-// A safe restart leaves COM connected to NC and the GoPro adapter unpowered.
+// Startup de-energises the relay: COM -> NC feeds power to the GoPro adapter.
 bool relayEnabled = false;
 bool phoneConnected = false;
 bool lastRawButtonPressed = false;
@@ -78,7 +78,7 @@ class CommandCallbacks final : public BLECharacteristicCallbacks {
     }
 
     const uint8_t command = static_cast<uint8_t>(value[0]);
-    if (command > kCommandToggle) {
+    if (command > kCommandTogglePower) {
       Serial.printf("BLE command rejected: 0x%02X\n", command);
       return;
     }
@@ -120,13 +120,13 @@ void processBleCommand() {
 
   pendingCommand = -1;
   switch (command) {
-    case kCommandOff:
+    case kCommandPowerOn:
       setRelay(false, "BLE");
       break;
-    case kCommandOn:
+    case kCommandPowerOff:
       setRelay(true, "BLE");
       break;
-    case kCommandToggle:
+    case kCommandTogglePower:
       setRelay(!relayEnabled, "BLE");
       break;
   }
