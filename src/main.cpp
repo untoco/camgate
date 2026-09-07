@@ -2,23 +2,31 @@
 
 namespace {
 
-constexpr uint32_t kRelayIntervalMs = 5000;
+constexpr uint32_t kRelayIntervalMs = 10000;
 
 // Atom Lite's native Grove DIN is GPIO26. Atomic ToUnit Base can route its
-// Grove signal to one of these Atom Lite pins with its DIP switches. During
-// the bench test all candidates change together; afterwards keep only the
-// pin confirmed by the actual base wiring.
+// Grove signal to one of these Atom Lite pins with its DIP switches. The
+// diagnostic test enables one candidate at a time, so a multimeter can reveal
+// which pin is actually wired to the relay.
 constexpr uint8_t kRelayPins[] = {26, 19, 22, 23, 33};
 
-bool relayEnabled = false;
+size_t activePinIndex = 0;
 uint32_t lastChangeMs = 0;
 
-void setRelay(bool enabled) {
+void disableAllRelayPins() {
   for (const uint8_t pin : kRelayPins) {
-    digitalWrite(pin, enabled ? HIGH : LOW);
+    digitalWrite(pin, LOW);
   }
+}
 
-  Serial.printf("Relay: %s\n", enabled ? "ON" : "OFF");
+void testNextPin() {
+  disableAllRelayPins();
+  const uint8_t pin = kRelayPins[activePinIndex];
+  digitalWrite(pin, HIGH);
+  Serial.printf("Testing GPIO%u: COM and NO should be closed for 10 seconds\n",
+                pin);
+
+  activePinIndex = (activePinIndex + 1) % (sizeof(kRelayPins) / sizeof(kRelayPins[0]));
 }
 
 }  // namespace
@@ -32,14 +40,14 @@ void setup() {
     pinMode(pin, OUTPUT);
   }
 
-  setRelay(false);
+  disableAllRelayPins();
+  testNextPin();
   lastChangeMs = millis();
 }
 
 void loop() {
   if (millis() - lastChangeMs >= kRelayIntervalMs) {
-    relayEnabled = !relayEnabled;
-    setRelay(relayEnabled);
+    testNextPin();
     lastChangeMs += kRelayIntervalMs;
   }
 }
